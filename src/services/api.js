@@ -296,9 +296,21 @@ export const api = {
    */
   getStockById: async (id) => {
     await delay(800);
-    // 1. mockStocks 우선 매칭
+    // 1. mockStocks 우선 매칭 (실제 수집 데이터가 존재하면 병합)
     const stock = mockStocks.find((s) => s.id === id);
-    if (stock) return JSON.parse(JSON.stringify(stock));
+    if (stock) {
+      const copy = JSON.parse(JSON.stringify(stock));
+      const registered = stockRegistry.find((s) => s.id === id);
+      if (registered) {
+        if (registered.financials && registered.financials.length > 0) {
+          copy.financials = registered.financials;
+        }
+        if (registered.financialsQuarterly && registered.financialsQuarterly.length > 0) {
+          copy.financialsQuarterly = registered.financialsQuarterly;
+        }
+      }
+      return copy;
+    }
 
     // 2. stockRegistry 명부 매칭
     const registered = stockRegistry.find((s) => s.id === id);
