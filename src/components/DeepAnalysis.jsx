@@ -307,6 +307,13 @@ export default function DeepAnalysis({ analysis, reports, stockCode }) {
         )}
       </div>
 
+      {/* AI Analysis Disclaimer/Source Guide */}
+      {activeTab !== 'reports' && hasAnalysis && (
+        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/40 flex items-center gap-2 text-[10px] font-semibold text-finance-lightTextMuted dark:text-finance-textMuted bg-slate-50/50 dark:bg-slate-800/5 px-3 py-2.5 rounded-xl border border-slate-100/50 dark:border-slate-800/10">
+          <Sparkles className="w-3.5 h-3.5 text-finance-primary animate-pulse flex-shrink-0" />
+          <span>본 분석은 최근 수집된 증권사 기업분석 리포트 원문 및 시장 자료를 AI가 종합 분석한 결과입니다.</span>
+        </div>
+      )}
     </div>
   );
 }

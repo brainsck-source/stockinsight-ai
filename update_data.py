@@ -13,7 +13,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configurable constants
-LIMIT_STOCKS = 2      # Number of top stocks to scrape financials for
+LIMIT_STOCKS = 5      # Number of top stocks to scrape financials for
 SLEEP_INTERVAL = 0.5   # Seconds to sleep between requests to avoid block
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -313,6 +313,28 @@ def fetch_financials(code, freq_typ="Y"):
         return None
 
 
+def fetch_report_summary(nid):
+    if not nid:
+        return ""
+    url = f"https://finance.naver.com/research/company_read.naver?nid={nid}"
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        res.encoding = 'cp949'
+        soup = BeautifulSoup(res.text, 'html.parser')
+        td = soup.find('td', class_='view_cnt')
+        if td:
+            # Clean text (remove multiple newlines/spaces)
+            text = td.text.strip()
+            text = re.sub(r'\s+', ' ', text)
+            # Limit length to 800 characters to keep json size reasonable
+            if len(text) > 800:
+                text = text[:800] + "..."
+            return text
+    except Exception as e:
+        print(f"    [ERROR] fetch_report_summary({nid}): {e}")
+    return ""
+
+
 def scrape_stock_reports(pages=4):
     print(f"Scraping stock research reports (pages: {pages})...")
     reports_by_code = {}
@@ -367,13 +389,24 @@ def scrape_stock_reports(pages=4):
                 if len(date_str) == 8:
                     date_str = "20" + date_str
 
+                # Fetch report body content dynamically
+                summary = ""
+                if nid:
+                    print(f"      Scraping report summary for nid {nid}...", end="", flush=True)
+                    summary = fetch_report_summary(nid)
+                    if summary:
+                        print(" OK")
+                    else:
+                        print(" EMPTY")
+
                 report_data = {
                     "nid": nid,
                     "title": title,
                     "broker": broker,
                     "date": date_str,
                     "views": views,
-                    "pdfUrl": pdf_url
+                    "pdfUrl": pdf_url,
+                    "summary": summary
                 }
 
                 if stock_code not in reports_by_code:
@@ -562,8 +595,12 @@ def main():
         # Map stock reports if present
         if code in reports_by_code:
             s["reports"] = reports_by_code[code]
+            s["rawReportTexts"] = [r["summary"] for r in reports_by_code[code] if r.get("summary")]
+            s["summarySrc"] = s["rawReportTexts"]
         else:
             s["reports"] = []
+            s["rawReportTexts"] = []
+            s["summarySrc"] = []
 
         time.sleep(SLEEP_INTERVAL)
 
@@ -572,6 +609,11 @@ def main():
         code = s["code"]
         if code in reports_by_code and "reports" not in s:
             s["reports"] = reports_by_code[code]
+            s["rawReportTexts"] = [r["summary"] for r in reports_by_code[code] if r.get("summary")]
+            s["summarySrc"] = s["rawReportTexts"]
+        elif "rawReportTexts" not in s:
+            s["rawReportTexts"] = []
+            s["summarySrc"] = []
 
     # Write updated krxStocks.json back
     print(f"\nSaving updated stocks data to {json_path}...")
