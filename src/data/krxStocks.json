@@ -7,12 +7,12 @@
     "sector": "KOSPI 상장 주식",
     "price": 292500.0,
     "change": -7000.0,
-    "changeRate": -2.34,
-    "prevClose": 299500,
-    "open": 300000.0,
-    "high": 300500.0,
-    "low": 292000.0,
-    "volume": 18395274.0,
+    "changeRate": 0.0,
+    "prevClose": 299500.0,
+    "open": 300500.0,
+    "high": 18194628.0,
+    "low": 300000.0,
+    "volume": 292000.0,
     "marketCap": "1710.0조원",
     "reports": [
       {
@@ -20,7 +20,7 @@
         "title": "초호황 속 조정 구간 = 매수 타이밍",
         "broker": "신한투자증권",
         "date": "2026.05.21",
-        "views": "85884",
+        "views": "86982",
         "pdfUrl": ""
       },
       {
@@ -28,7 +28,7 @@
         "title": "내부는 태풍, 외부는 폭풍",
         "broker": "미래에셋증권",
         "date": "2026.05.21",
-        "views": "73604",
+        "views": "74670",
         "pdfUrl": "https://stock.pstatic.net/stock-research/company/56/20260521_company_973617000.pdf"
       }
     ],
@@ -206,12 +206,12 @@
     "sector": "KOSPI 상장 주식",
     "price": 1941000.0,
     "change": 1000.0,
-    "changeRate": 0.05,
-    "prevClose": 1940000,
-    "open": 1942000.0,
-    "high": 1952000.0,
-    "low": 1912000.0,
-    "volume": 3135190.0,
+    "changeRate": 0.0,
+    "prevClose": 1940000.0,
+    "open": 1952000.0,
+    "high": 2992389.0,
+    "low": 1942000.0,
+    "volume": 1912000.0,
     "marketCap": "1383.4조원",
     "reports": [
       {
@@ -219,7 +219,7 @@
         "title": "주도주는 원래 비싼 겁니다",
         "broker": "신한투자증권",
         "date": "2026.05.21",
-        "views": "71434",
+        "views": "72448",
         "pdfUrl": ""
       }
     ],

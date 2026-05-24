@@ -13,7 +13,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configurable constants
-LIMIT_STOCKS = 200      # Number of top stocks to scrape financials for
+LIMIT_STOCKS = 2      # Number of top stocks to scrape financials for
 SLEEP_INTERVAL = 0.5   # Seconds to sleep between requests to avoid block
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -141,6 +141,83 @@ def build_financials_from_cols(df, label_col, year_cols):
 
 
 
+def fetch_current_price(code):
+    url = f"https://finance.naver.com/item/main.naver?code={code}"
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        res.encoding = 'cp949'
+        soup = BeautifulSoup(res.text, 'html.parser')
+        
+        # 현재가
+        today_div = soup.find('div', class_='today')
+        if not today_div:
+            return None
+        price_span = today_div.find('span', class_='blind')
+        if not price_span:
+            return None
+        price = float(price_span.text.replace(',', '').strip())
+        
+        # 등락
+        no_exday = soup.find('p', class_='no_exday')
+        change = 0.0
+        if no_exday:
+            change_blind = no_exday.find('span', class_='blind')
+            if change_blind:
+                change = float(change_blind.text.replace(',', '').strip())
+            ico = no_exday.find('span', class_='ico')
+            if ico and "down" in ico.get('class', []):
+                change = -change
+                
+        # 등락률
+        no_jiga = soup.find('p', class_='no_jiga')
+        change_rate = 0.0
+        if no_jiga:
+            rate_blinds = no_jiga.find_all('span', class_='blind')
+            if len(rate_blinds) > 1:
+                rate_str = rate_blinds[1].text.replace('%', '').strip()
+                change_rate = float(rate_str)
+            ico = no_jiga.find('span', class_='ico')
+            if ico and "down" in ico.get('class', []):
+                change_rate = -change_rate
+                
+        # 시가/고가/저가/거래량
+        no_info = soup.find('table', class_='no_info')
+        open_price = None
+        high = None
+        low = None
+        volume = None
+        prev_close = None
+        
+        if no_info:
+            tds = no_info.find_all('td')
+            def get_td_val(td):
+                b = td.find('span', class_='blind')
+                if b:
+                    return float(b.text.replace(',', '').strip())
+                return None
+                
+            if len(tds) >= 5:
+                prev_close = get_td_val(tds[0])
+                open_price = get_td_val(tds[1])
+                high = get_td_val(tds[2])
+                low = get_td_val(tds[3])
+                volume = get_td_val(tds[4])
+                
+        return {
+            "price": price,
+            "change": change,
+            "changeRate": change_rate,
+            "prevClose": prev_close,
+            "open": open_price,
+            "high": high,
+            "low": low,
+            "volume": volume
+        }
+    except Exception as e:
+        print(f"    [ERROR] fetch_current_price({code}): {e}")
+        return None
+
+
 def fetch_financials(code, freq_typ="Y"):
     main_url = f"http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd={code}"
     ajax_url = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx"
@@ -245,7 +322,7 @@ def scrape_stock_reports(pages=4):
         url = f"{base_url}?page={page}"
         try:
             res = requests.get(url, headers=HEADERS, timeout=10)
-            res.encoding = 'euc-kr'
+            res.encoding = 'cp949'
             soup = BeautifulSoup(res.text, 'html.parser')
             table = soup.find('table', class_='type_1')
             if not table:
@@ -320,7 +397,7 @@ def scrape_industry_reports(pages=2):
         url = f"{base_url}?page={page}"
         try:
             res = requests.get(url, headers=HEADERS, timeout=10)
-            res.encoding = 'euc-kr'
+            res.encoding = 'cp949'
             soup = BeautifulSoup(res.text, 'html.parser')
             table = soup.find('table', class_='type_1')
             if not table:
@@ -453,6 +530,14 @@ def main():
         code = s["code"]
         name = s["name"]
         print(f"[{idx + 1}/{LIMIT_STOCKS}] {code} ({name})", end="", flush=True)
+
+        # Scrape price metrics
+        price_info = fetch_current_price(code)
+        if price_info:
+            s.update(price_info)
+            print(" (Price OK)", end="")
+        else:
+            print(" (Price SKIP)", end="")
 
         # Scrape Annual
         financials = fetch_financials(code, freq_typ="Y")

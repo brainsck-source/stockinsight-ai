@@ -302,11 +302,36 @@ export const api = {
       const copy = JSON.parse(JSON.stringify(stock));
       const registered = stockRegistry.find((s) => s.id === id);
       if (registered) {
+        // 실제 가격/수치 정보 덮어쓰기
+        if (registered.price !== undefined && registered.price !== null) copy.price = registered.price;
+        if (registered.change !== undefined && registered.change !== null) copy.change = registered.change;
+        if (registered.changeRate !== undefined && registered.changeRate !== null) copy.changeRate = registered.changeRate;
+        if (registered.prevClose !== undefined && registered.prevClose !== null) copy.prevClose = registered.prevClose;
+        if (registered.open !== undefined && registered.open !== null) copy.open = registered.open;
+        if (registered.high !== undefined && registered.high !== null) copy.high = registered.high;
+        if (registered.low !== undefined && registered.low !== null) copy.low = registered.low;
+        if (registered.volume !== undefined && registered.volume !== null) copy.volume = registered.volume;
+        if (registered.marketCap !== undefined && registered.marketCap !== null) copy.marketCap = registered.marketCap;
+
+        // 실제 가격에 맞춰 목표주가(Target Price)도 비례해서 갱신
+        if (copy.price !== undefined && copy.price !== null) {
+          const rand = createRandom(copy.id);
+          const targetPriceLow = Math.round((copy.price * (1.02 + rand() * 0.06)) / 500) * 500;
+          const targetPriceVal = Math.round((copy.price * (1.12 + rand() * 0.15)) / 500) * 500;
+          if (copy.deepAnalysis && copy.deepAnalysis.outlook) {
+            copy.deepAnalysis.outlook.targetPrice = `${targetPriceLow.toLocaleString()}원 ~ ${targetPriceVal.toLocaleString()}원`;
+          }
+        }
+
+        // 실제 재무제표 및 리포트 주입
         if (registered.financials && registered.financials.length > 0) {
           copy.financials = registered.financials;
         }
         if (registered.financialsQuarterly && registered.financialsQuarterly.length > 0) {
           copy.financialsQuarterly = registered.financialsQuarterly;
+        }
+        if (registered.reports && registered.reports.length > 0) {
+          copy.reports = registered.reports;
         }
       }
       return copy;
