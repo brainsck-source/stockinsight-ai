@@ -179,7 +179,11 @@ export default function App() {
 
             {/* Financial Charts & Table */}
             <div>
-              <FinancialsTab financials={stockData.financials} />
+              <FinancialsTab 
+                financials={stockData.financials} 
+                financialsQuarterly={stockData.financialsQuarterly}
+                theme={theme}
+              />
             </div>
 
             {/* Bottom Grid: Deep Analysis and Industry Reports */}
@@ -192,7 +196,7 @@ export default function App() {
                 />
               </div>
               <div className="lg:col-span-1">
-                <IndustryReportsFeed />
+                <IndustryReportsFeed onSelectStock={setActiveStockId} />
               </div>
             </div>
 

@@ -20,7 +20,7 @@
         "title": "초호황 속 조정 구간 = 매수 타이밍",
         "broker": "신한투자증권",
         "date": "2026.05.21",
-        "views": "46728",
+        "views": "84563",
         "pdfUrl": ""
       },
       {
@@ -28,7 +28,7 @@
         "title": "내부는 태풍, 외부는 폭풍",
         "broker": "미래에셋증권",
         "date": "2026.05.21",
-        "views": "36047",
+        "views": "72322",
         "pdfUrl": "https://stock.pstatic.net/stock-research/company/56/20260521_company_973617000.pdf"
       }
     ],
@@ -114,7 +114,89 @@
         "isConsensus": true
       }
     ],
-    "roe": 10.85
+    "roe": 10.85,
+    "financialsQuarterly": [
+      {
+        "year": "2025",
+        "revenue": 791405.0,
+        "operatingIncome": 66853.0,
+        "netIncome": 82229.0,
+        "roe": 9.24,
+        "operatingMargin": 8.45,
+        "netMargin": 10.39,
+        "isConsensus": false
+      },
+      {
+        "year": "2025",
+        "revenue": 745663.0,
+        "operatingIncome": 46761.0,
+        "netIncome": 51164.0,
+        "roe": 7.95,
+        "operatingMargin": 6.27,
+        "netMargin": 6.86,
+        "isConsensus": false
+      },
+      {
+        "year": "2025",
+        "revenue": 860617.0,
+        "operatingIncome": 121661.0,
+        "netIncome": 122257.0,
+        "roe": 8.37,
+        "operatingMargin": 14.14,
+        "netMargin": 14.21,
+        "isConsensus": false
+      },
+      {
+        "year": "2025",
+        "revenue": 938374.0,
+        "operatingIncome": 200737.0,
+        "netIncome": 196417.0,
+        "roe": 10.85,
+        "operatingMargin": 21.39,
+        "netMargin": 20.93,
+        "isConsensus": false
+      },
+      {
+        "year": "2026",
+        "revenue": 1338734.0,
+        "operatingIncome": 572328.0,
+        "netIncome": 472253.0,
+        "roe": 19.16,
+        "operatingMargin": 42.75,
+        "netMargin": 35.28,
+        "isConsensus": false
+      },
+      {
+        "year": "2026(E)",
+        "revenue": 1664092.0,
+        "operatingIncome": 857521.0,
+        "netIncome": 693965.0,
+        "roe": null,
+        "operatingMargin": 51.53,
+        "netMargin": 41.7,
+        "isConsensus": true
+      },
+      {
+        "year": "2026(E)",
+        "revenue": 1892930.0,
+        "operatingIncome": 1013125.0,
+        "netIncome": 807048.0,
+        "roe": null,
+        "operatingMargin": 53.52,
+        "netMargin": 42.63,
+        "isConsensus": true
+      },
+      {
+        "year": "2026(E)",
+        "revenue": 1961879.0,
+        "operatingIncome": 1080034.0,
+        "netIncome": 842405.0,
+        "roe": null,
+        "operatingMargin": 55.05,
+        "netMargin": 42.94,
+        "isConsensus": true
+      }
+    ]
   },
   {
     "id": "000660",
@@ -137,7 +219,7 @@
         "title": "주도주는 원래 비싼 겁니다",
         "broker": "신한투자증권",
         "date": "2026.05.21",
-        "views": "34794",
+        "views": "70208",
         "pdfUrl": ""
       }
     ],
@@ -223,7 +305,89 @@
         "isConsensus": true
       }
     ],
-    "roe": 44.15
+    "roe": 44.15,
+    "financialsQuarterly": [
+      {
+        "year": "2025",
+        "revenue": 176391.0,
+        "operatingIncome": 74405.0,
+        "netIncome": 81082.0,
+        "roe": 37.94,
+        "operatingMargin": 42.18,
+        "netMargin": 45.97,
+        "isConsensus": false
+      },
+      {
+        "year": "2025",
+        "revenue": 222320.0,
+        "operatingIncome": 92129.0,
+        "netIncome": 69962.0,
+        "roe": 39.27,
+        "operatingMargin": 41.44,
+        "netMargin": 31.47,
+        "isConsensus": false
+      },
+      {
+        "year": "2025",
+        "revenue": 244489.0,
+        "operatingIncome": 113834.0,
+        "netIncome": 125975.0,
+        "roe": 43.2,
+        "operatingMargin": 46.56,
+        "netMargin": 51.53,
+        "isConsensus": false
+      },
+      {
+        "year": "2025",
+        "revenue": 328267.0,
+        "operatingIncome": 191696.0,
+        "netIncome": 152460.0,
+        "roe": 44.15,
+        "operatingMargin": 58.4,
+        "netMargin": 46.44,
+        "isConsensus": false
+      },
+      {
+        "year": "2026",
+        "revenue": 525763.0,
+        "operatingIncome": 376103.0,
+        "netIncome": 403459.0,
+        "roe": 61.16,
+        "operatingMargin": 71.53,
+        "netMargin": 76.74,
+        "isConsensus": false
+      },
+      {
+        "year": "2026(E)",
+        "revenue": 814730.0,
+        "operatingIncome": 623261.0,
+        "netIncome": 464751.0,
+        "roe": null,
+        "operatingMargin": 76.5,
+        "netMargin": 57.04,
+        "isConsensus": true
+      },
+      {
+        "year": "2026(E)",
+        "revenue": 962452.0,
+        "operatingIncome": 749277.0,
+        "netIncome": 546700.0,
+        "roe": null,
+        "operatingMargin": 77.85,
+        "netMargin": 56.8,
+        "isConsensus": true
+      },
+      {
+        "year": "2026(E)",
+        "revenue": 1054990.0,
+        "operatingIncome": 813225.0,
+        "netIncome": 603493.0,
+        "roe": null,
+        "operatingMargin": 77.08,
+        "netMargin": 57.2,
+        "isConsensus": true
+      }
+    ]
   },
   {
     "id": "402340",

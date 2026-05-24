@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { ResponsiveContainer, ComposedChart, XAxis, YAxis, Tooltip, Legend, Bar, Line, CartesianGrid } from 'recharts';
-import { BarChart3, Table as TableIcon, AlertCircle } from 'lucide-react';
+import { BarChart3, Table as TableIcon, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 // Custom Tooltip for Recharts declared outside of render
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, useTrillion }) => {
   if (active && payload && payload.length) {
     const isEst = payload[0].payload.isConsensus;
-    const formatTrillion = (value) => {
+    
+    const formatValue = (value) => {
       if (value === null || value === undefined || isNaN(value)) return '-';
-      const trillion = (value / 10000).toFixed(2);
-      return `${parseFloat(trillion).toLocaleString()}조원`;
+      if (useTrillion) {
+        const trillion = (value / 10000).toFixed(2);
+        return `${parseFloat(trillion).toLocaleString()}조원`;
+      } else {
+        return `${value.toLocaleString()}억원`;
+      }
     };
 
     return (
@@ -30,7 +35,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                 {item.name}:
               </span>
               <span className="font-bold text-finance-lightText dark:text-finance-text">
-                {formatTrillion(item.payload[item.name === '매출액' ? 'rawRevenue' : item.name === '영업이익' ? 'rawOperatingIncome' : 'rawNetIncome'])}
+                {formatValue(item.payload[item.name === '매출액' ? 'rawRevenue' : item.name === '영업이익' ? 'rawOperatingIncome' : 'rawNetIncome'])}
               </span>
             </div>
           ))}
@@ -41,13 +46,16 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function FinancialsTab({ financials }) {
+export default function FinancialsTab({ financials, financialsQuarterly, theme }) {
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [filterPeriod, setFilterPeriod] = useState('all'); // 'all' | 'actuals' | 'consensus'
+  const [periodType, setPeriodType] = useState('annual'); // 'annual' | 'quarterly'
 
-  if (!financials || financials.length === 0) {
+  const activeFinancials = periodType === 'annual' ? financials : financialsQuarterly;
+
+  if (!activeFinancials || activeFinancials.length === 0) {
     return (
-      <div className="p-6 rounded-2xl border bg-finance-lightCard border-finance-lightBorder dark:bg-finance-card dark:border-finance-border shadow-sm flex flex-col items-center justify-center py-12 text-center">
+      <div className="p-6 rounded-2xl border bg-finance-lightCard border-finance-lightBorder dark:bg-finance-card dark:border-finance-border shadow-sm flex flex-col items-center justify-center py-12 text-center transition-colors duration-300">
         <div className="bg-amber-500/10 dark:bg-amber-500/20 p-3 rounded-full text-amber-500 mb-4 animate-pulse">
           <AlertCircle className="w-6 h-6" />
         </div>
@@ -61,67 +69,149 @@ export default function FinancialsTab({ financials }) {
     );
   }
 
-  // 100M KRW to Trillion (조원) formatter
-  const formatTrillion = (value) => {
+  // Determine Scaling (Trillion vs Billion Won)
+  const maxRevenue = Math.max(...activeFinancials.map(f => f.revenue || 0));
+  const useTrillion = maxRevenue >= 10000; // If >= 1,000,000,000,000 KRW (10,000 억원)
+
+  const formatValue = (value) => {
     if (value === null || value === undefined || isNaN(value)) return '-';
-    // value is in 억 원 (100 Million KRW)
-    const trillion = (value / 10000).toFixed(2);
-    return `${parseFloat(trillion).toLocaleString()}조원`;
+    if (useTrillion) {
+      const trillion = (value / 10000).toFixed(2);
+      return `${parseFloat(trillion).toLocaleString()}조원`;
+    } else {
+      return `${value.toLocaleString()}억원`;
+    }
   };
 
-  const formatTrillionNum = (value) => {
+  const formatChartValue = (value) => {
     if (value === null || value === undefined || isNaN(value)) return null;
-    return parseFloat((value / 10000).toFixed(2));
+    return useTrillion ? parseFloat((value / 10000).toFixed(2)) : value;
   };
 
   // Filter Data
   const getFilteredData = () => {
     switch (filterPeriod) {
       case 'actuals':
-        return financials.filter(f => !f.isConsensus);
+        return activeFinancials.filter(f => !f.isConsensus);
       case 'consensus':
-        return financials.filter(f => f.isConsensus);
+        return activeFinancials.filter(f => f.isConsensus);
       case 'all':
       default:
-        return financials;
+        return activeFinancials;
     }
   };
 
   const filteredData = getFilteredData();
   
-  // Transform data for chart to avoid flat lines
+  // Transform data for chart
   const chartData = filteredData.map(f => ({
     year: f.year,
-    '매출액': formatTrillionNum(f.revenue),
-    '영업이익': formatTrillionNum(f.operatingIncome),
-    '당기순이익': formatTrillionNum(f.netIncome),
+    '매출액': formatChartValue(f.revenue),
+    '영업이익': formatChartValue(f.operatingIncome),
+    '당기순이익': formatChartValue(f.netIncome),
     rawRevenue: f.revenue,
     rawOperatingIncome: f.operatingIncome,
     rawNetIncome: f.netIncome,
     isConsensus: f.isConsensus
   }));
 
+  // Calculate QoQ/YoY Earnings Surprise Indicator for latest actual data
+  const getEarningsBadge = () => {
+    if (periodType !== 'quarterly') return null;
+    
+    // Filter actuals only
+    const actuals = activeFinancials.filter(f => !f.isConsensus);
+    if (actuals.length < 2) return null;
+
+    const latest = actuals[actuals.length - 1];
+    const prev = actuals[actuals.length - 2];
+
+    if (
+      latest.operatingIncome === null || 
+      prev.operatingIncome === null || 
+      latest.operatingIncome === undefined || 
+      prev.operatingIncome === undefined || 
+      prev.operatingIncome === 0
+    ) {
+      return null;
+    }
+
+    const QoQChange = ((latest.operatingIncome - prev.operatingIncome) / Math.abs(prev.operatingIncome)) * 100;
+
+    if (QoQChange >= 10.0) {
+      return (
+        <div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-3 py-1.5 rounded-full animate-bounce shadow-sm">
+          <TrendingUp className="w-3.5 h-3.5" />
+          어닝 서프라이즈 (직전 분기 대비 +{QoQChange.toFixed(1)}%)
+        </div>
+      );
+    } else if (QoQChange <= -10.0) {
+      return (
+        <div className="flex items-center gap-1.5 text-[11px] font-black text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-3 py-1.5 rounded-full shadow-sm">
+          <TrendingDown className="w-3.5 h-3.5" />
+          어닝 쇼크 (직전 분기 대비 {QoQChange.toFixed(1)}%)
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 px-3 py-1.5 rounded-full shadow-sm">
+          시장 기대치 부합 ({QoQChange >= 0 ? '+' : ''}{QoQChange.toFixed(1)}%)
+        </div>
+      );
+    }
+  };
+
+  // Dark Mode Style Variables
+  const isDark = theme === 'dark';
+  const axisStroke = isDark ? '#94A3B8' : '#64748B';
+  const gridStroke = isDark ? '#1E293B' : '#E2E8F0';
+  
+  // Fintech style palette (legible in dark mode)
+  const revenueColor = isDark ? '#60A5FA' : '#3B82F6';
+  const opIncomeColor = isDark ? '#34D399' : '#10B981';
+  const netIncomeColor = isDark ? '#F87171' : '#EF4444';
 
   return (
     <div className="p-6 rounded-2xl border bg-finance-lightCard border-finance-lightBorder dark:bg-finance-card dark:border-finance-border shadow-sm hover:shadow-md transition-all duration-300">
       
       {/* Tab Menu Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/40">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/40">
         <div>
-          <h3 className="text-base font-bold text-finance-lightText dark:text-finance-text flex items-center gap-2">
-            <div className="bg-finance-primary/10 dark:bg-finance-primary/20 p-1.5 rounded-lg text-finance-primary dark:text-finance-accentLight">
-              <BarChart3 className="w-4 h-4" />
-            </div>
-            최근 실적 및 향후 전망
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-bold text-finance-lightText dark:text-finance-text flex items-center gap-2">
+              <div className="bg-finance-primary/10 dark:bg-finance-primary/20 p-1.5 rounded-lg text-finance-primary dark:text-finance-accentLight">
+                <BarChart3 className="w-4 h-4" />
+              </div>
+              {periodType === 'annual' ? '최근 연간 실적 및 전망' : '최근 분기 실적 추이'}
+            </h3>
+            {getEarningsBadge()}
+          </div>
           <p className="text-xs text-finance-lightTextMuted dark:text-finance-textMuted mt-1">
-            최근 3개년의 확정 실적과 2개년의 시장 예상치(컨센서스)의 비교 추이
+            {periodType === 'annual' 
+              ? '최근 3개년의 확정 실적과 2개년의 시장 예상치(컨센서스)의 비교 추이' 
+              : '최근 5개 분기별 기업 실제 달성 수치 분석'}
           </p>
         </div>
 
         {/* Filters and View Toggles */}
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {/* Period Filter */}
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          {/* Annual / Quarterly Toggle */}
+          <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-semibold">
+            <button
+              onClick={() => { setPeriodType('annual'); setFilterPeriod('all'); }}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 ${periodType === 'annual' ? 'bg-white dark:bg-finance-card text-finance-primary dark:text-finance-accentLight shadow-sm' : 'text-finance-lightTextMuted dark:text-finance-textMuted hover:text-finance-lightText dark:hover:text-finance-text'}`}
+            >
+              연간 실적
+            </button>
+            <button
+              onClick={() => { setPeriodType('quarterly'); setFilterPeriod('all'); }}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 ${periodType === 'quarterly' ? 'bg-white dark:bg-finance-card text-finance-primary dark:text-finance-accentLight shadow-sm' : 'text-finance-lightTextMuted dark:text-finance-textMuted hover:text-finance-lightText dark:hover:text-finance-text'}`}
+            >
+              분기 실적
+            </button>
+          </div>
+
+          {/* Period Filter (Only show for Annual or if Consensus available) */}
           <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-semibold">
             <button
               onClick={() => setFilterPeriod('all')}
@@ -168,42 +258,61 @@ export default function FinancialsTab({ financials }) {
         <div style={{ minHeight: 280 }} className="h-[280px] w-full font-sans">
           <ResponsiveContainer width="100%" height="100%" minHeight={280}>
             <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" className="dark:stroke-slate-850 opacity-40" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} className="opacity-60" />
               <XAxis 
                 dataKey="year" 
-                stroke="#64748B" 
+                stroke={axisStroke} 
                 fontSize={11} 
                 tickLine={false} 
                 axisLine={false}
               />
               <YAxis 
                 yAxisId="left"
-                stroke="#3B82F6" 
+                stroke={revenueColor} 
                 fontSize={11} 
                 tickLine={false} 
                 axisLine={false}
-                label={{ value: '매출액 (조원)', angle: -90, position: 'insideLeft', offset: 0, fill: '#3B82F6', fontSize: 10, fontWeight: 'bold' }}
+                label={{ 
+                  value: useTrillion ? '매출액 (조원)' : '매출액 (억원)', 
+                  angle: -90, 
+                  position: 'insideLeft', 
+                  offset: 0, 
+                  fill: revenueColor, 
+                  fontSize: 10, 
+                  fontWeight: 'bold' 
+                }}
               />
               <YAxis 
                 yAxisId="right" 
                 orientation="right"
-                stroke="#10B981" 
+                stroke={opIncomeColor} 
                 fontSize={11} 
                 tickLine={false} 
                 axisLine={false}
-                label={{ value: '영업/순이익 (조원)', angle: 90, position: 'insideRight', offset: 0, fill: '#10B981', fontSize: 10, fontWeight: 'bold' }}
+                label={{ 
+                  value: useTrillion ? '영업/순이익 (조원)' : '영업/순이익 (억원)', 
+                  angle: 90, 
+                  position: 'insideRight', 
+                  offset: 0, 
+                  fill: opIncomeColor, 
+                  fontSize: 10, 
+                  fontWeight: 'bold' 
+                }}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
+              <Tooltip 
+                content={<CustomTooltip useTrillion={useTrillion} />} 
+                cursor={{ fill: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(148, 163, 184, 0.08)' }} 
+              />
               <Legend 
                 verticalAlign="top" 
                 height={36} 
                 iconType="circle" 
                 iconSize={8}
-                wrapperStyle={{ fontSize: 11, fontWeight: 'semibold', paddingBottom: 10 }}
+                wrapperStyle={{ fontSize: 11, fontWeight: 'semibold', paddingBottom: 10, color: axisStroke }}
               />
-              <Bar yAxisId="left" dataKey="매출액" fill="#3B82F6" radius={[6, 6, 0, 0]} maxBarSize={45} fillOpacity={0.85} />
-              <Line yAxisId="right" type="monotone" dataKey="영업이익" stroke="#10B981" strokeWidth={2.5} dot={{ r: 4, strokeWidth: 1.5 }} activeDot={{ r: 6 }} />
-              <Line yAxisId="right" type="monotone" dataKey="당기순이익" stroke="#EF4444" strokeWidth={2.5} strokeDasharray="4 4" dot={{ r: 4, strokeWidth: 1.5 }} activeDot={{ r: 6 }} />
+              <Bar yAxisId="left" dataKey="매출액" fill={revenueColor} radius={[6, 6, 0, 0]} maxBarSize={45} fillOpacity={0.85} />
+              <Line yAxisId="right" type="monotone" dataKey="영업이익" stroke={opIncomeColor} strokeWidth={2.5} dot={{ r: 4, strokeWidth: 1.5 }} activeDot={{ r: 6 }} />
+              <Line yAxisId="right" type="monotone" dataKey="당기순이익" stroke={netIncomeColor} strokeWidth={2.5} strokeDasharray="4 4" dot={{ r: 4, strokeWidth: 1.5 }} activeDot={{ r: 6 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -212,8 +321,8 @@ export default function FinancialsTab({ financials }) {
         <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800/40">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/40 text-[11px] font-bold uppercase tracking-wider text-finance-lightTextMuted dark:text-finance-textMuted border-b border-slate-100 dark:border-slate-800/40">
-                <th className="py-3.5 px-4">연도</th>
+              <tr className="bg-slate-50 dark:bg-slate-850/40 text-[11px] font-bold uppercase tracking-wider text-finance-lightTextMuted dark:text-finance-textMuted border-b border-slate-100 dark:border-slate-800/40">
+                <th className="py-3.5 px-4">구분</th>
                 <th className="py-3.5 px-4 text-right">매출액</th>
                 <th className="py-3.5 px-4 text-right">영업이익</th>
                 <th className="py-3.5 px-4 text-right">당기순이익</th>
@@ -233,12 +342,12 @@ export default function FinancialsTab({ financials }) {
                       <span className="text-[9px] bg-amber-500/10 text-amber-500 border border-amber-500/10 px-1 py-0.2 rounded font-extrabold">E</span>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-sans font-bold">{formatTrillion(f.revenue)}</td>
+                  <td className="py-3.5 px-4 text-right font-sans font-bold">{formatValue(f.revenue)}</td>
                   <td className={`py-3.5 px-4 text-right font-sans font-bold ${f.operatingIncome < 0 ? 'text-finance-danger' : 'text-finance-lightText dark:text-finance-text'}`}>
-                    {formatTrillion(f.operatingIncome)}
+                    {formatValue(f.operatingIncome)}
                   </td>
                   <td className={`py-3.5 px-4 text-right font-sans font-bold ${f.netIncome < 0 ? 'text-finance-danger' : 'text-finance-lightText dark:text-finance-text'}`}>
-                    {formatTrillion(f.netIncome)}
+                    {formatValue(f.netIncome)}
                   </td>
                   <td className={`py-3.5 px-4 text-right font-sans ${f.operatingMargin < 0 ? 'text-finance-danger' : 'text-finance-success'}`}>
                     {f.operatingMargin !== null && f.operatingMargin !== undefined ? `${f.operatingMargin}%` : '-'}
@@ -257,7 +366,7 @@ export default function FinancialsTab({ financials }) {
       <div className="mt-4 flex items-start gap-2 text-[10px] text-finance-lightTextMuted dark:text-finance-textMuted bg-slate-50 dark:bg-slate-800/10 p-3 rounded-xl border border-slate-100 dark:border-slate-800/10">
         <AlertCircle className="w-3.5 h-3.5 mt-0.5 text-amber-500 flex-shrink-0" />
         <div className="leading-relaxed">
-          <strong>(E) 표시 연도는 시장 컨센서스(예상 전망치)입니다.</strong> 실제 실적치는 국내외 경기 변동, 기업 경영 환경, 회계 기준 변경 및 예상치 못한 시황 노출 요인에 의해 본 전망 그래프와 크게 다를 수 있으므로 본 데이터는 단순 투자 참고 지표로 사용되어야 합니다.
+          <strong>(E) 표시 연도/분기는 시장 예상 전망치(컨센서스)입니다.</strong> 실제 수치는 거시경제 변동, 회계 기준 변경 및 시황 노출 요인에 의해 실제 확정치와 다를 수 있으므로 본 데이터는 단순 투자 참고 지표로 사용되어야 합니다.
         </div>
       </div>
 

@@ -36,7 +36,8 @@ function generateStockData(
   actualMarketCap,
   actualFinancials,
   actualReports,
-  actualRoe
+  actualRoe,
+  actualFinancialsQuarterly
 ) {
   const rand = createRandom(id);
   
@@ -91,6 +92,35 @@ function generateStockData(
     }
   }
   
+  let financialsQuarterly = [];
+  if (actualFinancialsQuarterly && actualFinancialsQuarterly.length > 0) {
+    financialsQuarterly = actualFinancialsQuarterly;
+  } else {
+    const quarters = ["2024/06", "2024/09", "2024/12", "2025/03(E)", "2025/06(E)"];
+    let currentRev = Math.round(baseRevenue / 4);
+    for (let idx = 0; idx < quarters.length; idx++) {
+      const qtr = quarters[idx];
+      const isCons = qtr.includes("(E)");
+      
+      const growth = 1 + (rand() * 6 - 2) / 100;
+      currentRev = Math.round(currentRev * growth);
+      
+      const opInc = Math.round(currentRev * (operatingMargin / 100));
+      const netInc = Math.round(currentRev * (netMargin / 100));
+      
+      financialsQuarterly.push({
+        year: qtr,
+        revenue: currentRev,
+        operatingIncome: opInc,
+        netIncome: netInc,
+        operatingMargin,
+        netMargin,
+        roe,
+        isConsensus: isCons
+      });
+    }
+  }
+  
   const targetPriceVal = Math.round((price * (1.12 + rand() * 0.18)) / 500) * 500;
   const targetPriceLow = Math.round((price * (0.88 + rand() * 0.08)) / 500) * 500;
   
@@ -131,6 +161,7 @@ function generateStockData(
       }
     ],
     financials,
+    financialsQuarterly,
     reports: actualReports || [],
     deepAnalysis: {
       growth: {
@@ -297,6 +328,7 @@ export const api = {
           roe: null,
           momentums: [],
           financials: [],
+          financialsQuarterly: [],
           reports: registered.reports || [],
           isDataPending: true,
           deepAnalysis: null
@@ -319,7 +351,8 @@ export const api = {
         registered.marketCap,
         registered.financials,
         registered.reports,
-        registered.roe
+        registered.roe,
+        registered.financialsQuarterly
       );
     }
 
@@ -346,6 +379,7 @@ export const api = {
         roe: null,
         momentums: [],
         financials: [],
+        financialsQuarterly: [],
         reports: [],
         isDataPending: true,
         deepAnalysis: null
@@ -414,6 +448,17 @@ export const api = {
       return reports.default || [];
     } catch (e) {
       console.warn("Failed to load industry reports:", e);
+      return [];
+    }
+  },
+
+  getRecentStockReports: async () => {
+    await delay(100);
+    try {
+      const reports = await import('../data/recentStockReports.json');
+      return reports.default || [];
+    } catch (e) {
+      console.warn("Failed to load recent stock reports:", e);
       return [];
     }
   }

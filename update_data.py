@@ -141,7 +141,7 @@ def build_financials_from_cols(df, label_col, year_cols):
 
 
 
-def fetch_financials(code):
+def fetch_financials(code, freq_typ="Y"):
     main_url = f"http://companyinfo.stock.naver.com/v1/company/c1010001.aspx?cmp_cd={code}"
     ajax_url = "http://companyinfo.stock.naver.com/v1/company/ajax/cF1001.aspx"
 
@@ -159,11 +159,11 @@ def fetch_financials(code):
         id_match = re.search(r"\bid\s*:\s*['\"]([^'\"]+)['\"]", html)
         id_val = id_match.group(1) if id_match else ''
 
-        # 2. Call AJAX endpoint for annual financials
+        # 2. Call AJAX endpoint for financials
         params = {
             "cmp_cd": code,
             "fin_typ": 0,
-            "freq_typ": "Y",
+            "freq_typ": freq_typ,
             "encparam": encparam,
             "id": id_val
         }
@@ -232,7 +232,7 @@ def fetch_financials(code):
         return financials if financials else None
 
     except Exception as e:
-        print(f"    [ERROR] fetch_financials({code}): {e}")
+        print(f"    [ERROR] fetch_financials({code}, freq_typ={freq_typ}): {e}")
         return None
 
 
@@ -377,6 +377,21 @@ def scrape_industry_reports(pages=2):
     return industry_reports
 
 
+def clean_json_file(file_path):
+    if not os.path.exists(file_path):
+        return
+    with open(file_path, encoding="utf-8") as f:
+        raw = f.read()
+    cleaned = raw.replace('\ufffd', '').replace('\x00', '')
+    try:
+        json.loads(cleaned)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(cleaned)
+        print(f"JSON post-processing complete: {file_path} is browser-safe.")
+    except json.JSONDecodeError as e:
+        print(f"Warning: JSON post-processing failed for {file_path} ({e}).")
+
+
 def main():
     json_path = os.path.join("src", "data", "krxStocks.json")
     if not os.path.exists(json_path):
@@ -399,6 +414,26 @@ def main():
         json.dump(industry_reports, f, indent=2, ensure_ascii=False)
     print(f"Saved industry reports to {ind_report_path}")
 
+    # Compile and save recent stock reports feed
+    print("Compiling recent stock reports...")
+    all_stock_reports = []
+    code_to_name = {s["code"]: s["name"] for s in stocks}
+    for code, reports in reports_by_code.items():
+        name = code_to_name.get(code, "알 수 없는 종목")
+        for r in reports:
+            r_copy = dict(r)
+            r_copy["stockCode"] = code
+            r_copy["stockName"] = name
+            all_stock_reports.append(r_copy)
+
+    all_stock_reports.sort(key=lambda x: x.get("date", ""), reverse=True)
+    recent_stock_reports = all_stock_reports[:12]  # Extract top 12 most recent
+
+    recent_report_path = os.path.join("src", "data", "recentStockReports.json")
+    with open(recent_report_path, "w", encoding="utf-8") as f:
+        json.dump(recent_stock_reports, f, indent=2, ensure_ascii=False)
+    print(f"Saved recent stock reports to {recent_report_path}")
+
     # 2. Sort stocks by market cap to select top stocks for financials
     print("Sorting stocks by market cap...")
     stocks_with_cap = []
@@ -413,17 +448,24 @@ def main():
 
     success_count = 0
 
-    # 3. Scrape financials and merge
+    # 3. Scrape financials (Annual & Quarterly) and merge
     for idx, s in enumerate(top_stocks):
         code = s["code"]
         name = s["name"]
         print(f"[{idx + 1}/{LIMIT_STOCKS}] {code} ({name})", end="", flush=True)
 
-        financials = fetch_financials(code)
+        # Scrape Annual
+        financials = fetch_financials(code, freq_typ="Y")
+        time.sleep(0.15)
+        # Scrape Quarterly
+        financials_q = fetch_financials(code, freq_typ="Q")
+
         if financials:
             success_count += 1
-            print(f" -> OK ({len(financials)} years)")
+            print(f" -> OK (Annual: {len(financials)} yrs / Quarterly: {len(financials_q) if financials_q else 0} qtrs)")
             s["financials"] = financials
+            s["financialsQuarterly"] = financials_q if financials_q else []
+            
             actual = [f for f in financials if not f["isConsensus"]]
             if actual:
                 latest = actual[-1]
@@ -451,19 +493,11 @@ def main():
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(stocks, f, indent=2, ensure_ascii=False)
 
-    # Post-processing: strip replacement chars that may have been introduced
-    # during scraping. Vite's strict JSON parser rejects them.
-    print("Post-processing: cleaning JSON for browser compatibility...")
-    with open(json_path, encoding="utf-8") as f:
-        raw = f.read()
-    cleaned = raw.replace('\ufffd', '').replace('\x00', '')
-    try:
-        json.loads(cleaned)
-        with open(json_path, "w", encoding="utf-8") as f:
-            f.write(cleaned)
-        print("JSON post-processing complete (file is browser-safe).")
-    except json.JSONDecodeError as e:
-        print(f"Warning: JSON post-processing failed ({e}). Keeping original.")
+    # Post-processing: clean output JSONs
+    print("Cleaning JSON files for browser compatibility...")
+    clean_json_file(json_path)
+    clean_json_file(ind_report_path)
+    clean_json_file(recent_report_path)
 
     print(f"All tasks completed! Financials scraped: {success_count}/{LIMIT_STOCKS}")
 
