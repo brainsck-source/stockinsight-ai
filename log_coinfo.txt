@@ -1,0 +1,75 @@
+Starting coinfo script...
+Response status: 200
+Response text snippet:
+<!--  global include -->
+
+	
+	
+<html lang='ko'>
+<head>
+
+
+	
+		<title>삼성전자 : Npay 증권</title>
+	
+	
+
+
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta name="apple-mobile-web-app-title" content="Npay 증권" />
+
+
+
+
+
+	
+		<meta property="og:title" content="Npay 증권"/>
+		<meta property="og:image" content="https://ssl.pstatic.net/static/m/stock/im/2016/08/og_stock-200.png"/>
+		<meta property="og:url" content="https://finance.naver.com"/>
+		<meta property="og:description" content="국내 해외 증시 지수, 시장지표, 뉴스, 증권사 리서치 등 제공"/>
+    
+    
+
+<meta property="og:type" content="article"/>
+<meta property="og:article:thumbnailUrl" content=""/>
+<meta property="og:article:author" content="Npay 증권"/>
+<meta property="og:article:author:url" content="http://FINANCE.NAVER.COM"/>
+
+
+
+
+
+
+<link rel='stylesheet' type='text/css' href='https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/finance_header.css'>
+
+	
+	
+	
+	
+		
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/newstock.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/common.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/layout.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/main.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/newstock2.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/newstock3.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20260520175448/css/world.css">
+		<link rel="stylesheet" type="text/css" href="https://ssl.pstatic.net/imgstock/static.pc/20
+Parsing HTML tables with pandas StringIO...
+Tables found: 10
+Table 0: shape=(2, 3), has_revenue=False
+Table 1: shape=(2, 3), has_revenue=False
+Table 2: shape=(4, 2), has_revenue=False
+Table 3: shape=(3, 2), has_revenue=False
+Table 4: shape=(2, 2), has_revenue=False
+Table 5: shape=(4, 2), has_revenue=False
+Table 6: shape=(2, 2), has_revenue=False
+Table 7: shape=(25, 3), has_revenue=False
+Table 8: shape=(11, 3), has_revenue=False
+Table 9: shape=(11, 3), has_revenue=False
+Finished successfully.

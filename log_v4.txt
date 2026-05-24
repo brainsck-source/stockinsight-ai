@@ -1,0 +1,19 @@
+Starting script v4...
+Response status: 200
+Parsing HTML tables with pandas StringIO...
+Tables found: 14
+Table 0: shape=(2, 3), has_revenue=False
+Table 1: shape=(2, 3), has_revenue=False
+Table 2: shape=(7, 4), has_revenue=False
+Table 3: shape=(8, 5), has_revenue=False
+Table 4: shape=(16, 11), has_revenue=False
+Table 5: shape=(14, 6), has_revenue=False
+Table 6: shape=(4, 2), has_revenue=False
+Table 7: shape=(3, 2), has_revenue=False
+Table 8: shape=(2, 2), has_revenue=False
+Table 9: shape=(4, 2), has_revenue=False
+Table 10: shape=(2, 2), has_revenue=False
+Table 11: shape=(25, 3), has_revenue=False
+Table 12: shape=(11, 3), has_revenue=False
+Table 13: shape=(11, 3), has_revenue=False
+Finished successfully.
